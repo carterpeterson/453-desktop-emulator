@@ -11,11 +11,14 @@
 #define EMULATOR_WINDOW_WIDTH   640
 #define EMULATOR_WINDOW_HEIGHT  160
 
-
 typedef struct {
   uint8_t red, green, blue;
 } Pixel;
 
-extern Pixel display_frame_buffer[256];
+extern Pixel frame_buffer[256];
+
+void render(void);
+void init_display(void);
+void set_pixel(int i, int j, Pixel p);
 
 #endif
