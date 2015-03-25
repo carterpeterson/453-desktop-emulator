@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <pthread.h>
 
 /* Application Specific C Headers */
 #include "game.h"
@@ -27,11 +29,14 @@ typedef struct {
   uint8_t red, green, blue;
 } Pixel;
 
-extern Pixel frame_buffer[256];
+extern Pixel *frame_buffer;
 extern Display *dis;
 extern int width, height, pixel_width, pixel_height;
+extern pthread_mutex_t frame_buffer_lock;
+extern bool render_flag;
 
 void render(void);
+void render_frame_buffer(void);
 void init_display(void);
 void set_pixel(int i, int j, Pixel p);
 

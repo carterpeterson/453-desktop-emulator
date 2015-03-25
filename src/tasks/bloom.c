@@ -44,6 +44,10 @@ void bloom_animation(void)
   MAX_RADIUS = hypot(BLOOM_RADIUS, BLOOM_RADIUS);
   current_color_base += 1;
   int i, j;
+  Pixel white_pixel;
+  white_pixel.red = 255;
+  white_pixel.green = 255;
+  white_pixel.blue = 255;
 
   if(current_color_base > (256 * 3))
     current_color_base = 0;
@@ -64,7 +68,10 @@ void bloom_animation(void)
 	p = get_bloom_pixel(3 - (i % 3), 3 - (j % 3));	
       }
       
-      frame_buffer[(j * 32) + i] = p;
+      if(is_pixel_touched(i, j))
+	frame_buffer[(j * 32) + i] = white_pixel;
+      else
+	frame_buffer[(j * 32) + i] = p;
     }
     i = temp;
   }

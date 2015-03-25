@@ -15,11 +15,20 @@ long resolve_pixel_color(Pixel p);
 void render_frame_buffer();
 
 int width, height, pixel_width, pixel_height;
-Pixel frame_buffer[256];
+Pixel pixel_buffers[2][256];
+Pixel *read_buffer, *frame_buffer;
+
+pthread_mutex_t frame_buffer_lock;
+bool render_flag;
 
 void init_display(void)
 {  
+  pthread_mutex_init(&frame_buffer_lock, NULL);
+  render_flag = false;
   init_x();
+
+  frame_buffer = pixel_buffers[0];
+  read_buffer = pixel_buffers[1];
   
   int i = 0;
   for(; i < PIXELS_WIDTH * PIXELS_HEIGHT; i++) {
@@ -42,7 +51,8 @@ void init_x()
 			  EMULATOR_WINDOW_WIDTH, EMULATOR_WINDOW_HEIGHT, 0, black, white);
   XSetStandardProperties(dis, win, "GameTable Emulator",
 			 "GameTable Emulator", None, NULL, 0, NULL);
-  XSelectInput(dis, win, ExposureMask|ButtonPressMask|Button1MotionMask);
+  XSelectInput(dis, win, ExposureMask|ButtonPressMask|ButtonReleaseMask|Button1MotionMask);
+  XAutoRepeatOn(dis);
   gc=XCreateGC(dis, win, 0,0);
   XSetBackground(dis,gc,white);
   XSetForeground(dis,gc,black);
@@ -90,8 +100,8 @@ long resolve_pixel_color(Pixel p)
 void render_frame_buffer()
 {
   int i = 0;
-  for(; i < PIXELS_WIDTH * PIXELS_HEIGHT; i++) {  
-    XSetForeground(dis, gc, resolve_pixel_color(frame_buffer[i]));
+  for(; i < PIXELS_WIDTH * PIXELS_HEIGHT; i++) {
+    XSetForeground(dis, gc, resolve_pixel_color(read_buffer[i]));
     XFillRectangle(dis, win, gc, (i % PIXELS_WIDTH) * pixel_width,
 		   (i / PIXELS_WIDTH) * pixel_height, pixel_width, pixel_height);
   }
@@ -106,5 +116,13 @@ void set_pixel(int i, int j, Pixel p)
 
 void render()
 {
-  render_frame_buffer();
+  Pixel *temp;
+
+  pthread_mutex_lock(&frame_buffer_lock);
+  temp = read_buffer;
+  read_buffer = frame_buffer;
+  frame_buffer = read_buffer;
+
+  render_flag = true;
+  pthread_mutex_unlock(&frame_buffer_lock);
 }
