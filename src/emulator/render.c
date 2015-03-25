@@ -1,16 +1,4 @@
-/* X library headers */
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xos.h>
-
-/* Normal C Headers */
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-/* Application Specific C Headers */
 #include "render.h"
-#include "game.h"
 
 /* here are our X variables */
 Display *dis;
@@ -30,10 +18,7 @@ int width, height, pixel_width, pixel_height;
 Pixel frame_buffer[256];
 
 void init_display(void)
-{
-  XEvent event;		/* the XEvent declaration !!! */
-  KeySym key;		/* a dealie-bob to handle KeyPress Events */	
-  
+{  
   init_x();
   
   int i = 0;

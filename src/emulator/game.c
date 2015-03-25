@@ -9,14 +9,9 @@
 #include "game.h"
 #include "render.h"
 #include "input.h"
+#include "../tasks/tasks.h"
 
-#define SLEEP_30_FPS 33333
-
-void demo_loop(void)
+void init_tasks(void)
 {
-  printf("-- Entered Game Control --\n\r");
-  while(1) {
-    usleep(SLEEP_30_FPS);
-    bloom_animation();
-  }
+  demo_task();
 }

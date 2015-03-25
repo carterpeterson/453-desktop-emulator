@@ -1,7 +1,19 @@
 #ifndef __RENDER_H__
 #define __RENDER_H__
 
+/* X library headers */
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/Xos.h>
+
+/* Normal C Headers */
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <stdint.h>
+
+/* Application Specific C Headers */
+#include "game.h"
 
 // Physical Game Board Related Constants
 #define PIXELS_WIDTH             32
@@ -16,6 +28,8 @@ typedef struct {
 } Pixel;
 
 extern Pixel frame_buffer[256];
+extern Display *dis;
+extern int width, height, pixel_width, pixel_height;
 
 void render(void);
 void init_display(void);

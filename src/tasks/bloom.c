@@ -6,9 +6,7 @@
 #include <stdbool.h>
 
 // Project specific includes
-#include "game.h"
-#include "render.h"
-#include "input.h"
+#include "tasks.h"
 
 #define BLOOM_RADIUS 3
 #define FULL_RADIUS_STEP 100
@@ -72,4 +70,12 @@ void bloom_animation(void)
   }
 
   render();
+}
+
+void demo_task(void)
+{
+  while(1) {
+    usleep(33333);
+    bloom_animation();
+  }
 }
