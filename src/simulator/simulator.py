@@ -10,20 +10,24 @@ PIXEL_WIDTH 	= WINDOW_WIDTH / 32
 FRAME_BUFFER_SIZE = 768
 
 # Make the COM_PORT 1 less than the port you wanna use
-COM_PORT 		= 6
+COM_PORT 		= 3
 BAUDRATE 		= 460800
 TEST_MODE 		= False
-HUMAN_READABLE  = True
+HUMAN_READABLE  = False
 
 EVENT_CLICK 	= 4
 EVENT_RELEASE 	= 5
 EVENT_DRAG 		= 6
 
 touch_active = False
+update_display = False
 current_touch_pos = 0,0
 ser = serial.Serial()
 rectangles = [[]]
 canvas = None
+root = None
+frame_buffer_read = None
+frame_buffer_write = None
 
 def output_touch_buffer():
 	global touch_active, current_touch_pos, ser
@@ -43,22 +47,27 @@ def output_touch_buffer():
 					else:
 						ser.write(struct.pack("I", touch_buffer[i] & 0xFFFFFFFF))
 					
-			
+		else:
+			for i in range(8):
+					if HUMAN_READABLE:
+						ser.write(str(0 & 0xFFFFFFFF))
+					else:
+						ser.write(struct.pack("I", 0 & 0xFFFFFFFF))
+						
 		time.sleep(0.01)
 			
 
 def recieve_frame_buffer():
-	global ser, canvas
+	global ser, canvas, touch_buffer_read, touch_buffer_write, update_display
 	
 	while 1:
-		recieved_buffer = ser.read(FRAME_BUFFER_SIZE)
-		recieved_buffer = struct.unpack(FRAME_BUFFER_SIZE * 'B', recieved_buffer)
+		touch_buffer_write = ser.read(FRAME_BUFFER_SIZE)
+		touch_buffer_write = struct.unpack(FRAME_BUFFER_SIZE * 'B', touch_buffer_write)
 		
-		print "Change Display!"
+		touch_buffer_read = touch_buffer_write
+		update_display = True
 		
-		for i in range(0, FRAME_BUFFER_SIZE, 3):
-			mycolor = '#%02x%02x%02x' % (int(recieved_buffer[i]), int(recieved_buffer[i + 1]), int(recieved_buffer[i + 2]))
-			canvas.itemconfig(rectangles[(i / 3) % 32][(i / 3) / 32], fill=mycolor)
+		
 			
 			
 def board_touch_event(event):
@@ -98,9 +107,21 @@ def create_canvas(master):
 	
 	return rectangle_array
 	
+def update():
+	global frame_buffer_read, root, update_display
+	
+	if update_display == True:
+		for i in range(0, FRAME_BUFFER_SIZE, 3):
+			mycolor = '#%02x%02x%02x' % (int(touch_buffer_read[i]), int(touch_buffer_read[i + 1]), int(touch_buffer_read[i + 2]))
+			canvas.itemconfig(rectangles[(i / 3) % 32][(i / 3) / 32], fill=mycolor)
+			
+		update_display = False
+			
+	root.after(1, update)
+	
 
 def main():
-	global ser, rectangles, canvas
+	global ser, rectangles, canvas, root
 
 	if not TEST_MODE:
 		open_serial()
@@ -120,6 +141,7 @@ def main():
 		print "Failed to start simulator threads...exiting"
 		sys.exit(2)
 	
+	root.after(1, update)
 	root.mainloop()
 		
 	
