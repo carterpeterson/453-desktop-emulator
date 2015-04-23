@@ -79,10 +79,10 @@ void bloom_animation(void)
   render();
 }
 
-void demo_task(void)
+/*void demo_task(void)
 {
   while(1) {
     usleep(33333);
     bloom_animation();
   }
-}
+  }*/
