@@ -8,6 +8,7 @@ PIXEL_HEIGHT 	= WINDOW_HEIGHT / 8
 PIXEL_WIDTH 	= WINDOW_WIDTH / 32
 
 FRAME_BUFFER_SIZE = 768
+TOUCH_BUFFER_SIZE = 16
 
 # Make the COM_PORT 1 less than the port you wanna use
 COM_PORT 		= 3
@@ -28,58 +29,29 @@ canvas = None
 root = None
 frame_buffer_read = None
 frame_buffer_write = None
-
-def output_touch_buffer():
-	global touch_active, current_touch_pos, ser
-
-	while 1:
-		touch_buffer = [0] * 8
-	
-		if touch_active:
-			pixel_pos = current_touch_pos[0] / PIXEL_WIDTH, current_touch_pos[1] / PIXEL_HEIGHT
-			
-			if(pixel_pos[0] >= 0 and pixel_pos[0] < 32 and pixel_pos[1] >= 0 and pixel_pos[1] < 8):
-				touch_buffer[pixel_pos[1]] = (1 << (31 - pixel_pos[0]))
-				
-				for i in range(8):
-					if HUMAN_READABLE:
-						ser.write(str(touch_buffer[i] & 0xFFFFFFFF))
-					else:
-						ser.write(struct.pack("I", touch_buffer[i] & 0xFFFFFFFF))
-					
-		else:
-			for i in range(8):
-					if HUMAN_READABLE:
-						ser.write(str(0 & 0xFFFFFFFF))
-					else:
-						ser.write(struct.pack("I", 0 & 0xFFFFFFFF))
-						
-		time.sleep(0.01)
+count = 0
 			
 
-def recieve_frame_buffer():
-	global ser, canvas, frame_buffer_read, frame_buffer_write, update_display
+def recieve_touch_buffer():
+	global ser, canvas, frame_buffer_read, frame_buffer_write, update_display, count
 	
 	while 1:
-		frame_buffer_write = ser.read(FRAME_BUFFER_SIZE)
-		frame_buffer_write = struct.unpack(FRAME_BUFFER_SIZE * 'B', frame_buffer_write)
+		touch_buffer = ser.read(TOUCH_BUFFER_SIZE)
+		touch_buffer = struct.unpack(TOUCH_BUFFER_SIZE * 'B', touch_buffer)
 		
-		frame_buffer_read = frame_buffer_write
+		print str(count)
+			
+		count = count + 1
+		
+		frame_buffer_read = [0] * 768
+		
+		for i in range(TOUCH_BUFFER_SIZE):
+			for bit in range(8):
+				if (touch_buffer[i] & (0x01 << (7 - bit))) == (0x01 << (7 -bit)):
+					frame_buffer_read[(((3 - (i%4)) + ((i / 4) * 4)) * 8 + bit) * 3] = 255
+		
 		update_display = True
 		
-		
-			
-			
-def board_touch_event(event):
-	global touch_active, current_touch_pos
-
-	if int(event.type) == EVENT_CLICK:
-		touch_active = True
-		current_touch_pos = event.x, event.y
-	elif int(event.type) == EVENT_DRAG:
-		current_touch_pos = event.x, event.y
-	elif int(event.type) == EVENT_RELEASE:
-		touch_active = False
 
 def open_serial():
 	global ser
@@ -98,9 +70,6 @@ def create_canvas(master):
 	global canvas
 
 	canvas = Canvas(master, width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
-	canvas.bind("<Button-1>", board_touch_event)
-	canvas.bind("<B1-Motion>", board_touch_event)
-	canvas.bind("<ButtonRelease-1>", board_touch_event)
 	canvas.pack()
 	
 	rectangle_array = [[canvas.create_rectangle(i * PIXEL_WIDTH, j * PIXEL_HEIGHT, (i+1) * PIXEL_WIDTH, (j+1) * PIXEL_HEIGHT, fill="blue") for j in range(8)] for i in range(32)]
@@ -135,8 +104,7 @@ def main():
 	rectangles = create_canvas(root)
 	
 	try:
-		thread.start_new_thread(output_touch_buffer, ())
-		thread.start_new_thread(recieve_frame_buffer, ())
+		thread.start_new_thread(recieve_touch_buffer, ())
 	except:
 		print "Failed to start simulator threads...exiting"
 		sys.exit(2)
